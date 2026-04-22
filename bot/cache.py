@@ -39,7 +39,7 @@ class TTLCache(Generic[K, V]):
         entry = self._entries.get(key)
         if entry is None:
             return None
-
+#1
         if entry.expires_at <= self._time_func():
             del self._entries[key]
             return None
