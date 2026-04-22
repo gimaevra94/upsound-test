@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Any
 
 from yandex_music import Client
+from yandex_music.exceptions import NotFoundError
 
 from bot.cache import TTLCache
 
@@ -156,35 +157,67 @@ class YandexMusicService:
             return int(likes_count)
         return None
 
-    @staticmethod
-    def _try_get_lyrics(track: Any) -> str | None:
+    def _try_get_lyrics(self, track: Any) -> str | None:
         """
-        Попробовать загрузить текст песни через supplement трека.
+        Попробовать загрузить текст песни.
 
-        В разных версиях `yandex-music` текст может быть доступен через разные
-        атрибуты, поэтому метод написан «защитно» и проверяет несколько типовых путей.
+        `yandex-music` помечает получение текста через supplement как устаревшее,
+        поэтому сначала пробуем актуальные методы `get_lyrics`/`tracks_lyrics`.
         """
 
-        if not getattr(track, "lyrics_available", False):
+        track_id = getattr(track, "id", None)
+
+        # 1) Предпочтительный путь: Track.get_lyrics('TEXT') -> TrackLyrics.fetch_lyrics()
+        try:
+            get_lyrics = getattr(track, "get_lyrics", None)
+            if callable(get_lyrics):
+                lyrics_obj = get_lyrics("TEXT")
+                if lyrics_obj is not None:
+                    fetch = getattr(lyrics_obj, "fetch_lyrics", None)
+                    if callable(fetch):
+                        text = fetch()
+                        if isinstance(text, str) and text.strip():
+                            return text.strip()
+        except NotFoundError:
             return None
+        except Exception:
+            # Падаем дальше на альтернативные пути.
+            pass
 
-        supplement = track.get_supplement()
-        if supplement is None:
-            return None
+        # 2) Альтернатива: Client.tracks_lyrics(track_id, format_='TEXT') -> TrackLyrics.fetch_lyrics()
+        if track_id is not None:
+            try:
+                lyrics_obj = self._client.tracks_lyrics(track_id, format_="TEXT")
+                if lyrics_obj is not None:
+                    fetch = getattr(lyrics_obj, "fetch_lyrics", None)
+                    if callable(fetch):
+                        text = fetch()
+                        if isinstance(text, str) and text.strip():
+                            return text.strip()
+            except NotFoundError:
+                return None
+            except Exception:
+                pass
 
-        lyrics_obj = getattr(supplement, "lyrics", None)
-        if lyrics_obj is None:
-            return None
+        # 3) Legacy fallback: supplement.lyrics.full_lyrics / fetch_lyrics()
+        try:
+            if getattr(track, "lyrics_available", False):
+                get_supplement = getattr(track, "get_supplement", None)
+                if callable(get_supplement):
+                    supplement = get_supplement()
+                    lyrics_obj = getattr(supplement, "lyrics", None) if supplement is not None else None
+                    if lyrics_obj is not None:
+                        full_text = getattr(lyrics_obj, "full_lyrics", None)
+                        if isinstance(full_text, str) and full_text.strip():
+                            return full_text.strip()
 
-        full_text = getattr(lyrics_obj, "full_lyrics", None)
-        if isinstance(full_text, str) and full_text.strip():
-            return full_text.strip()
-
-        fetch_method = getattr(lyrics_obj, "fetch_lyrics", None)
-        if callable(fetch_method):
-            fetched = fetch_method()
-            if isinstance(fetched, str) and fetched.strip():
-                return fetched.strip()
+                        fetch_method = getattr(lyrics_obj, "fetch_lyrics", None)
+                        if callable(fetch_method):
+                            fetched = fetch_method()
+                            if isinstance(fetched, str) and fetched.strip():
+                                return fetched.strip()
+        except Exception:
+            pass
 
         return None
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-
+from dotenv import load_dotenv  
 
 @dataclass(frozen=True)
 class Settings:
@@ -34,8 +34,10 @@ class Settings:
         - CACHE_TTL_SECONDS (по умолчанию: 600)
         """
 
-        telegram_token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-        yandex_music_token = os.getenv("YANDEX_MUSIC_TOKEN", "").strip()
+        load_dotenv()
+        
+        telegram_token = os.getenv("TELEGRAM_BOT_TOKEN")
+        yandex_music_token = os.getenv("YANDEX_MUSIC_TOKEN")
 
         if not telegram_token:
             raise ValueError("Требуется переменная окружения TELEGRAM_BOT_TOKEN.")

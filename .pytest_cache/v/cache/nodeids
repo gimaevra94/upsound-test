@@ -1,0 +1,8 @@
+[
+  "tests/test_cache.py::test_cache_expires_values",
+  "tests/test_cache.py::test_cache_returns_value_before_expiration",
+  "tests/test_yandex_music_service.py::test_parse_track_url_invalid",
+  "tests/test_yandex_music_service.py::test_parse_track_url_success",
+  "tests/test_yandex_music_service.py::test_render_metadata_message_contains_lyrics_block",
+  "tests/test_yandex_music_service.py::test_truncate_lyrics_adds_suffix"
+]
