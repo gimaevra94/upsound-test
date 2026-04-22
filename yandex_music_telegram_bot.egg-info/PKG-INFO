@@ -1,0 +1,53 @@
+Metadata-Version: 2.4
+Name: yandex-music-telegram-bot
+Version: 0.1.0
+Summary: Telegram bot that returns detailed metadata for Yandex Music tracks.
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: python-telegram-bot
+Requires-Dist: yandex-music
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+
+# Telegram-бот для метаданных Яндекс Музыки
+
+Бот принимает ссылку на трек Яндекс Музыки, получает подробные метаданные через библиотеку `yandex-music` и отправляет ответ в Telegram, включая текст песни (если он доступен).
+
+## Возможности
+
+- Принимает ссылку вида `https://music.yandex.ru/album/<album_id>/track/<track_id>`.
+- Возвращает расширенную информацию о треке: название, исполнители, альбом, длительность, релиз, жанр, лайки.
+- Получает текст песни (если доступен в API).
+- Ограничивает длину текста песни (`LYRICS_MAX_LENGTH`).
+- Кеширует ответы в памяти на заданный TTL (`CACHE_TTL_SECONDS`).
+- Имеет unit-тесты для ключевых частей логики.
+
+## Подготовка
+
+1. Установите Python 3.10+.
+2. Установите зависимости:
+
+```bash
+pip install -e .[dev]
+```
+
+3. Задайте переменные окружения:
+
+```bash
+set TELEGRAM_BOT_TOKEN=8431643132:AAETHM7HWCdOksqBCA_XGQFaaYfWX-YEJ40
+set YANDEX_MUSIC_TOKEN=y0__wgBEP-_3qsHGN74BiCohrSXFyWfX_8CHb6tktrP2zzsJnoZkuJn
+set LYRICS_MAX_LENGTH=2000
+set CACHE_TTL_SECONDS=600
+```
+
+## Запуск
+
+```bash
+python -m bot.main
+```
+
+## Тесты
+
+```bash
+pytest
+```
