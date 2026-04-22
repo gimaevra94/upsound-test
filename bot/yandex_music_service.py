@@ -73,6 +73,17 @@ def _truncate_lyrics(text: str, max_length: int) -> str:
     return text[:allowed].rstrip() + suffix
 
 
+def build_lyrics_preview(text: str, preview_length: int = 500) -> tuple[str, bool]:
+    """Подготовить превью текста песни фиксированной длины."""
+
+    normalized = text.strip()
+    if len(normalized) <= preview_length:
+        return normalized, False
+
+    preview = normalized[:preview_length].rstrip()
+    return f"{preview}\n\n[Текст песни сокращен]", True
+
+
 class YandexMusicService:
     """
     Получает метаданные из Яндекс Музыки и применяет кеширование.
@@ -112,14 +123,21 @@ class YandexMusicService:
             raise ValueError("Трек не найден. Проверьте ссылку.")
 
         artists = [artist.name for artist in (track.artists or []) if getattr(artist, "name", None)]
-        album_title = track.albums[0].title if track.albums else "Неизвестный альбом"
+        primary_album = track.albums[0] if track.albums else None
+        album_title = primary_album.title if primary_album and getattr(primary_album, "title", None) else "Неизвестный альбом"
         duration_seconds = round((track.duration_ms or 0) / 1000, 2)
 
-        release_date = self._parse_release_date(track.albums[0].release_date if track.albums else None)
+        release_date = self._parse_release_date(primary_album.release_date if primary_album else None)
+        genre = self._extract_genre(track, primary_album)
+        likes_count = self._extract_likes_count(track, primary_album)
+
+        if primary_album is not None and (genre is None or likes_count is None):
+            full_album = self._try_fetch_album(primary_album)
+            if full_album is not None:
+                genre = genre or self._extract_genre(track, full_album)
+                likes_count = likes_count if likes_count is not None else self._extract_likes_count(track, full_album)
 
         lyrics = self._try_get_lyrics(track)
-        if lyrics:
-            lyrics = _truncate_lyrics(lyrics, self._lyrics_max_length)
 
         metadata = TrackMetadata(
             track_id=track_key,
@@ -128,8 +146,8 @@ class YandexMusicService:
             album=album_title,
             duration_seconds=duration_seconds,
             release_date=release_date,
-            genre=getattr(track, "genre", None),
-            likes_count=self._extract_likes_count(track),
+            genre=genre,
+            likes_count=likes_count,
             lyrics=lyrics,
             source_url=source_url,
         )
@@ -147,14 +165,70 @@ class YandexMusicService:
             return value
 
     @staticmethod
-    def _extract_likes_count(track: Any) -> int | None:
-        """Безопасно извлечь число лайков из объекта трека `yandex-music`."""
+    def _to_int(value: Any) -> int | None:
+        """Преобразовать значение в целое число, если это возможно."""
 
-        likes_count = getattr(track, "likes_count", None)
-        if isinstance(likes_count, int):
-            return likes_count
-        if isinstance(likes_count, str) and likes_count.isdigit():
-            return int(likes_count)
+        if isinstance(value, int):
+            return value
+        if isinstance(value, str) and value.isdigit():
+            return int(value)
+        return None
+
+    @classmethod
+    def _extract_likes_count(cls, track: Any, album: Any | None = None) -> int | None:
+        """
+        Безопасно извлечь число лайков.
+
+        В API значение чаще встречается у альбома, поэтому используем каскад fallback:
+        track.likes_count -> album.likes_count.
+        """
+
+        for source in (track, album):
+            if source is None:
+                continue
+            likes_count = getattr(source, "likes_count", None)
+            normalized = cls._to_int(likes_count)
+            if normalized is not None:
+                return normalized
+        return None
+
+    @staticmethod
+    def _extract_genre(track: Any, album: Any | None = None) -> str | None:
+        """
+        Извлечь жанр из наиболее надёжных полей.
+
+        track.genre в объектах `Track` часто отсутствует, зато жанр встречается
+        в track.meta_data.genre и album.genre.
+        """
+
+        meta_data = getattr(track, "meta_data", None)
+        track_meta_genre = getattr(meta_data, "genre", None) if meta_data is not None else None
+        track_genre = getattr(track, "genre", None)
+        album_genre = getattr(album, "genre", None) if album is not None else None
+
+        for value in (track_meta_genre, track_genre, album_genre):
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        return None
+
+    def _try_fetch_album(self, album: Any) -> Any | None:
+        """Попытаться получить полные данные альбома, если в треке поля пустые."""
+
+        album_id = getattr(album, "id", None)
+        if album_id is None:
+            return None
+
+        albums_method = getattr(self._client, "albums", None)
+        if not callable(albums_method):
+            return None
+
+        try:
+            albums = albums_method([album_id])
+            if albums:
+                return albums[0]
+        except Exception:
+            return None
+
         return None
 
     def _try_get_lyrics(self, track: Any) -> str | None:
@@ -222,7 +296,7 @@ class YandexMusicService:
         return None
 
 
-def render_metadata_message(metadata: TrackMetadata) -> str:
+def render_metadata_message(metadata: TrackMetadata, include_lyrics: bool = True) -> str:
     """Сформировать человекочитаемый текст ответа из `TrackMetadata`."""
 
     lines = [
@@ -235,6 +309,9 @@ def render_metadata_message(metadata: TrackMetadata) -> str:
         f"Лайков: {metadata.likes_count if metadata.likes_count is not None else 'Нет данных'}",
         f"Ссылка: {metadata.source_url}",
     ]
+
+    if not include_lyrics:
+        return "\n".join(lines)
 
     if metadata.lyrics:
         lines.append("")

@@ -34,10 +34,10 @@ pip install -e .[dev]
 3. Задайте переменные окружения:
 
 ```bash
-set TELEGRAM_BOT_TOKEN=8431643132:AAETHM7HWCdOksqBCA_XGQFaaYfWX-YEJ40
-set YANDEX_MUSIC_TOKEN=y0__wgBEP-_3qsHGN74BiCohrSXFyWfX_8CHb6tktrP2zzsJnoZkuJn
-set LYRICS_MAX_LENGTH=2000
-set CACHE_TTL_SECONDS=600
+set TELEGRAM_BOT_TOKEN=""
+set YANDEX_MUSIC_TOKEN=""
+set LYRICS_MAX_LENGTH=
+set CACHE_TTL_SECONDS=
 ```
 
 ## Запуск

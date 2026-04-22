@@ -1,8 +1,13 @@
 [
   "tests/test_cache.py::test_cache_expires_values",
   "tests/test_cache.py::test_cache_returns_value_before_expiration",
+  "tests/test_yandex_music_service.py::test_build_lyrics_preview_keeps_short_text",
+  "tests/test_yandex_music_service.py::test_build_lyrics_preview_marks_truncated_text",
+  "tests/test_yandex_music_service.py::test_extract_genre_prefers_track_meta_data",
+  "tests/test_yandex_music_service.py::test_extract_likes_count_falls_back_to_album",
   "tests/test_yandex_music_service.py::test_parse_track_url_invalid",
   "tests/test_yandex_music_service.py::test_parse_track_url_success",
   "tests/test_yandex_music_service.py::test_render_metadata_message_contains_lyrics_block",
+  "tests/test_yandex_music_service.py::test_render_metadata_message_uses_spoiler_after_500_chars",
   "tests/test_yandex_music_service.py::test_truncate_lyrics_adds_suffix"
 ]

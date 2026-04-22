@@ -17,8 +17,8 @@ class Settings:
 
     telegram_token: str
     yandex_music_token: str
-    lyrics_max_length: int = 2000
-    cache_ttl_seconds: int = 600
+    lyrics_max_length: int = 500
+    cache_ttl_seconds: int = 2678400
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -30,8 +30,8 @@ class Settings:
         - YANDEX_MUSIC_TOKEN
 
         Необязательные переменные:
-        - LYRICS_MAX_LENGTH (по умолчанию: 2000)
-        - CACHE_TTL_SECONDS (по умолчанию: 600)
+        - LYRICS_MAX_LENGTH (по умолчанию: 500)
+        - CACHE_TTL_SECONDS (по умолчанию: 2678400)
         """
 
         load_dotenv()
@@ -44,8 +44,8 @@ class Settings:
         if not yandex_music_token:
             raise ValueError("Требуется переменная окружения YANDEX_MUSIC_TOKEN.")
 
-        lyrics_max_length = int(os.getenv("LYRICS_MAX_LENGTH", "2000"))
-        cache_ttl_seconds = int(os.getenv("CACHE_TTL_SECONDS", "600"))
+        lyrics_max_length = int(os.getenv("LYRICS_MAX_LENGTH", "500"))
+        cache_ttl_seconds = int(os.getenv("CACHE_TTL_SECONDS", "2678400"))
 
         return cls(
             telegram_token=telegram_token,

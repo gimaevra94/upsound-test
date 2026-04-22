@@ -2,6 +2,8 @@
 
 from bot.yandex_music_service import (
     TrackMetadata,
+    YandexMusicService,
+    build_lyrics_preview,
     _truncate_lyrics,
     parse_track_url,
     render_metadata_message,
@@ -47,4 +49,40 @@ def test_render_metadata_message_contains_lyrics_block():
     assert "Название: Song" in message
     assert "Текст песни:" in message
     assert "Line 1" in message
+
+
+def test_build_lyrics_preview_marks_truncated_text():
+    preview, is_truncated = build_lyrics_preview("a" * 700, preview_length=500)
+    assert is_truncated is True
+    assert preview.endswith("[Текст песни сокращен]")
+
+
+def test_build_lyrics_preview_keeps_short_text():
+    preview, is_truncated = build_lyrics_preview("line 1\nline 2", preview_length=500)
+    assert is_truncated is False
+    assert preview == "line 1\nline 2"
+
+
+def test_extract_genre_prefers_track_meta_data():
+    class Meta:
+        genre = "hip-hop"
+
+    class Track:
+        meta_data = Meta()
+        genre = None
+
+    class Album:
+        genre = "rap"
+
+    assert YandexMusicService._extract_genre(Track(), Album()) == "hip-hop"
+
+
+def test_extract_likes_count_falls_back_to_album():
+    class Track:
+        likes_count = None
+
+    class Album:
+        likes_count = "321"
+
+    assert YandexMusicService._extract_likes_count(Track(), Album()) == 321
 

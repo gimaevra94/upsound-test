@@ -25,8 +25,8 @@ pip install -e .[dev]
 ```bash
 set TELEGRAM_BOT_TOKEN=""
 set YANDEX_MUSIC_TOKEN=""
-set LYRICS_MAX_LENGTH=2000
-set CACHE_TTL_SECONDS=600
+set LYRICS_MAX_LENGTH=
+set CACHE_TTL_SECONDS=
 ```
 
 ## Запуск

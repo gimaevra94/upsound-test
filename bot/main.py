@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler, MessageHandler, filters
 
 from bot.cache import TTLCache
 from bot.config import Settings
-from bot.handlers import create_start_handler, create_track_handler
+from bot.handlers import create_lyrics_callback_handler, create_start_handler, create_track_handler
 from bot.yandex_music_service import TrackMetadata, YandexMusicService
 
 
@@ -28,6 +28,9 @@ def build_application(settings: Settings) -> Application:
     application = Application.builder().token(settings.telegram_token).build()
     application.add_handler(CommandHandler("start", create_start_handler()))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, create_track_handler(service)))
+    application.add_handler(
+        CallbackQueryHandler(create_lyrics_callback_handler(), pattern=r"^lyrics:")
+    )
     return application
 
 

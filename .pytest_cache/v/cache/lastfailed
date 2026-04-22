@@ -1,0 +1,3 @@
+{
+  "tests/test_yandex_music_service.py::test_render_metadata_message_uses_spoiler_after_500_chars": true
+}
