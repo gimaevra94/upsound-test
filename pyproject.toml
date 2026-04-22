@@ -1,0 +1,19 @@
+[project]
+name = "yandex-music-telegram-bot"
+version = "0.1.0"
+description = "Telegram bot that returns detailed metadata for Yandex Music tracks."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "python-telegram-bot",
+    "yandex-music",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
